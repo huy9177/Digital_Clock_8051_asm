@@ -1,29 +1,29 @@
-<<<<<<< HEAD
 ; definition
 LCD1602_RS_Pin equ P0.0
 LCD1602_RW_Pin equ P0.1
 LCD1602_EN_Pin equ P0.2
 LCD1602_Data_Port equ P1
-DS1307_Address equ #4eh
+DS1307_Address equ 0D0H
 SDA equ P3.6
 SCL equ P3.7
-DS1307_Second_Reg equ #00h
-DS1307_Minutes_Reg equ #01h
-DS1307_Hours_Reg equ #02h
-DS1307_Day_Reg equ #03h
-DS1307_Date_Reg equ #04h
-DS1307_Month_Reg equ #05h
-DS1307_Year_Reg equ #06h
-DS1307_Control_Reg equ #07h
-DS1307_Ram equ #08h
-LCD_Clear_Screen equ #01h
-LCD_Reset_Cursor equ #02h
-LCD_Input_Set equ #04h
-LCD_Display_Switch equ #08h
-LCD_Shift equ #10h
-LCD_Function_Set equ #20h
-LCD_Set_CGRAM_Addr equ #40h
-LCD_Set_DDRAM_Addr equ #80h
+DS1307_Second_Reg equ 00h
+DS1307_Minutes_Reg equ 01h
+DS1307_Hours_Reg equ 02h
+DS1307_Day_Reg equ 03h
+DS1307_Date_Reg equ 04h
+DS1307_Month_Reg equ 05h
+DS1307_Year_Reg equ 06h
+DS1307_Control_Reg equ 07h
+DS1307_Ram equ 08h
+LCD_Clear_Screen equ 01h
+LCD_Reset_Cursor equ 02h
+LCD_Input_Set equ 04h
+LCD_Display_Switch equ 08h
+LCD_Shift equ 10h
+LCD_Function_Set equ 20h
+LCD_Set_CGRAM_Addr equ 40h
+LCD_Set_DDRAM_Addr equ 80h
+
 
 
 
@@ -303,20 +303,8 @@ LCD_Data:
 ; Trả về: A chứa dữ liệu đọc được từ DS1307
 ;huy
 ;-----------------------------------------------
-	DS1307_READ_BYTE:
-      	mov R7, #4; counter			(1 cycle)
-      	read_loop_reg:
-      	setb SCL;					(1 cycle)
-      	mov C, SDA; read SDA's state		(1 cycle)
-      	rlc A;	shift read bit to A register	(1 cycle)
-      	acall delay_3us;				(6 cycles)
-      	nop;					(1 cycle)
-     	clr SCL;					(1 cycle)
-     	acall delay_3us;				(6 cycles)
-	nop;					(1 cycle)
-      	DJNZ R7, read_loop_reg;			(2 cycles)
-      	setb SCL;					(1 cycle) 
-      	ret;					(2 cycles)
+DS1307_READ_BYTE:
+      	acall I2C_Read_Byte
 
 ;-----------------------------------------------
 ; DS1307_GET_TIME
@@ -325,14 +313,13 @@ LCD_Data:
 ;Huy
 ;-----------------------------------------------
 ;-----------------------------------------------
-DS1307_GET_TIME:
-;DS1307_Second_Reg
+DS1307_GET_SECOND:
 	mov A, #DS1307_Address
       	acall I2C_Start
       	acall I2C_Send_Byte
      	acall I2C_Read_ACK
      	mov A, #DS1307_Second_Reg
-      	acall DS1307_READ_BYTE
+      	acall I2C_Send_Byte
      	acall I2C_Read_ACK
      	acall I2C_Stop
     	mov A, #DS1307_Address
@@ -341,35 +328,17 @@ DS1307_GET_TIME:
      	acall I2C_Send_Byte
      	acall I2C_Read_ACK
       	acall I2C_Read_Byte
-     	mov R2, A
+     	mov 30h, A
       	acall I2C_Send_NoAck
       	acall I2C_Stop
+	RET
 ;-----------------------------------------------
-;DS1307_Minutes_Reg
+DS1307_GET_MINUTES:
 	mov A, #DS1307_Address
       	acall I2C_Start
       	acall I2C_Send_Byte
      	acall I2C_Read_ACK
      	mov A, #DS1307_Minutes_Reg
-      	acall DS1307_READ_BYTE
-     	acall I2C_Read_ACK
-     	acall I2C_Stop
-    	mov A, #DS1307_Address
-    	orl A, #1
-   	acall I2C_Start
-     	acall I2C_Send_Byte
-     	acall I2C_Read_ACK
-      	acall I2C_Read_Byte
-     	mov R3, A
-      	acall I2C_Send_NoAck
-      	acall I2C_Stop
-;-----------------------------------------------
-;DS1307_Hours_Reg
-	mov A, #DS1307_Address
-      	acall I2C_Start
-      	acall DS1307_READ_BYTE
-     	acall I2C_Read_ACK
-     	mov A, DS1307_Hours_Reg
       	acall I2C_Send_Byte
      	acall I2C_Read_ACK
      	acall I2C_Stop
@@ -379,10 +348,113 @@ DS1307_GET_TIME:
      	acall I2C_Send_Byte
      	acall I2C_Read_ACK
       	acall I2C_Read_Byte
-     	mov R4, A
+     	mov 31h, A
       	acall I2C_Send_NoAck
       	acall I2C_Stop
-	ret
+	RET
+;-----------------------------------------------
+DS1307_GET_HOURS:	
+	mov A, #DS1307_Address
+      	acall I2C_Start
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	mov A, #DS1307_Hours_Reg
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	acall I2C_Stop
+    	mov A, #DS1307_Address
+    	orl A, #1
+   	acall I2C_Start
+     	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+      	acall I2C_Read_Byte
+     	mov 32h, A
+      	acall I2C_Send_NoAck
+      	acall I2C_Stop
+	RET
+;-----------------------------------------------
+DS1307_GET_DAY:	
+	mov A, #DS1307_Address
+      	acall I2C_Start
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	mov A, #DS1307_Day_Reg
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	acall I2C_Stop
+    	mov A, #DS1307_Address
+    	orl A, #1
+   	acall I2C_Start
+     	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+      	acall I2C_Read_Byte
+     	mov 33h, A
+      	acall I2C_Send_NoAck
+      	acall I2C_Stop
+	RET
+;-----------------------------------------------
+DS1307_GET_DATE:	
+	mov A, #DS1307_Address
+      	acall I2C_Start
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	mov A, #DS1307_Date_Reg
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	acall I2C_Stop
+    	mov A, #DS1307_Address
+    	orl A, #1
+   	acall I2C_Start
+     	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+      	acall I2C_Read_Byte
+     	mov 34h, A
+      	acall I2C_Send_NoAck
+      	acall I2C_Stop
+	RET
+	
+;-----------------------------------------------
+DS1307_GET_MONTH:	
+	mov A, #DS1307_Address
+      	acall I2C_Start
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	mov A, #DS1307_Month_Reg
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	acall I2C_Stop
+    	mov A, #DS1307_Address
+    	orl A, #1
+   	acall I2C_Start
+     	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+      	acall I2C_Read_Byte
+     	mov 35h, A
+      	acall I2C_Send_NoAck
+      	acall I2C_Stop
+	RET
+	
+;-----------------------------------------------
+DS1307_GET_YEAR:	
+	mov A, #DS1307_Address
+      	acall I2C_Start
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	mov A, #DS1307_Year_Reg
+      	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+     	acall I2C_Stop
+    	mov A, #DS1307_Address
+    	orl A, #1
+   	acall I2C_Start
+     	acall I2C_Send_Byte
+     	acall I2C_Read_ACK
+      	acall I2C_Read_Byte
+     	mov 36h, A
+      	acall I2C_Send_NoAck
+      	acall I2C_Stop
+	RET	
+
 
 ;-----------------------------------------------
 ; CONVERT_BCD_TO_ASCII
